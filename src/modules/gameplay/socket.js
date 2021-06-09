@@ -10,6 +10,8 @@ const User = require("../user/user.handler");
 var questions;
 var tick = 0;
 var timeout;
+
+//Message format to be sent to the user
 function formatMessage(message, text) {
   return {
     message,
@@ -18,7 +20,7 @@ function formatMessage(message, text) {
   };
 }
 
-
+//Get user Details
 async function getUserDetails(UserId) {
     var q = {query: {}};
     q.query.UserId = UserId;
@@ -28,6 +30,7 @@ async function getUserDetails(UserId) {
     return data.userName;
 }
 
+//Get 5 Random Questions
 async function getQuestions() {
     var q = {query: {}};
     let data = await QuestionHandler.getRandom(q)
@@ -39,6 +42,7 @@ async function getQuestions() {
     return data;
 }
 
+//add to Room_Question table
 async function addToStat(QuestionId, RoomId) {
     var q = {query: {}}
     q.query.RoomId = RoomId
@@ -47,6 +51,7 @@ async function addToStat(QuestionId, RoomId) {
     return data;
 }
 
+//Send questions function
 var i = 0;
 async function sendQuestions(questions, RoomId) {
     try{
@@ -67,10 +72,14 @@ async function sendQuestions(questions, RoomId) {
     }
 }
 
+
+//Get Score after a match
 async function getScore(RoomId) {
     let data = await User_Room.getMergedTable(RoomId)
     return data;
 }
+
+//After a match finalize scores and broadcast to user AND remove RoomId from user table
 async function finalize(RoomId) {
     var q = {query: {}}
     q.query.RoomId = RoomId
@@ -109,6 +118,7 @@ async function finalize(RoomId) {
     await User.removeRoom(q);
 }   
 
+//The main function which creates an interval so questions are sent only after 10secs OR if both users submitted answers
 async function interval(RoomId) {
     try{
         tick = 10000;
@@ -127,12 +137,13 @@ async function interval(RoomId) {
     }
 }
 
+//socket init
 exports.init = async ()=>{
     io.on('connection', (socket) => {
         console.log('user connected');
-        
         var tick = 10000;
 
+        //Socket on 'join' event, joins a user to a room
         socket.on('join', async(RoomId, UserId) => {
             i=0;
             tick = 0;
@@ -157,10 +168,25 @@ exports.init = async ()=>{
             }
         })
 
+        //starts the game if there are 2 users in a room
         socket.on('start', async (RoomId) => {
-            timeout = setInterval(function () { interval(RoomId) }, tick)            
+            var q = {query: {}}
+            q.query.RoomId = RoomId
+            let data = await User.countUsers(q)
+            if(data == 2) {
+                timeout = setInterval(function () { interval(RoomId) }, tick)
+            }
+            else{
+                io
+                .to(RoomId)
+                .emit(
+                    'message',
+                    formatMessage(`Cannot start the game, too few users`)
+                );
+            }
         })
 
+        //for every 'ans' event checks the answer and stores the state of the game in DB
         socket.on('ans', async(ans, UserId, RoomId, QuestionId) => {
             var q = {query: {}}
             q.query.RoomId = RoomId;
@@ -209,6 +235,7 @@ exports.init = async ()=>{
             }
         })
 
+        //clint sends 'end' event after we broadcast the result so that we leave the room
         socket.on('end', async (RoomId) => {
             socket.leave(RoomId);
         })

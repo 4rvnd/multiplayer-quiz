@@ -242,9 +242,33 @@ async function removeRoom(req) {
         }
     }
 }
+
+async function countUsers(req) {
+    const _q = req.query;
+    try {
+        let count = await User.count({
+            where: {
+                RoomId: _q.RoomId
+            }
+        })
+        return count;
+    }
+    catch (err) {
+        console.error(err);
+        return {
+            code: 400,
+            data: {
+                status: false,
+                message: err.message
+            }
+        }
+    }
+};
+
 exports.register = register;
 exports.login = login;
 exports.get = get;
 exports.update = update;
 exports.delete = del;
 exports.removeRoom = removeRoom;
+exports.countUsers = countUsers;
