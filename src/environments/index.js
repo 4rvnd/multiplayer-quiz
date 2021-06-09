@@ -3,8 +3,8 @@ module.exports = {
         name: 'authservice'
     },
     server: {
-        url: 'http://127.0.0.1:8000',
-        ip: '127.0.0.1',
+        url: 'http://3.143.215.77:8000',
+        ip: '3.143.215.77',
         port: 8000,
     },
     auth: {
