@@ -1,10 +1,10 @@
 module.exports = {
     service: {
-        name: 'authservice'
+        name: 'Multiplayer_game'
     },
     server: {
-        url: 'http://3.143.215.77:8000',
-        ip: '3.143.215.77',
+        url: 'http://0.0.0.0:8000',
+        ip: '0.0.0.0',
         port: 8000,
     },
     auth: {
